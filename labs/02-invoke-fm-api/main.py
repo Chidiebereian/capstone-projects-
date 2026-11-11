@@ -20,7 +20,6 @@ with open("image.png", "wb") as f:
     f.write(base64.b64decode(json.loads(res["body"].read())["images"][0]))
 
 # Code
-body["textToImageParams"] = None
 code_req = {"anthropic_version": "bedrock-2023-05-31", "max_tokens": 400,
             "messages": [{"role": "user", "content": "Python function that validates an email with a regex, with doctests."}]}
 res = rt.invoke_model(modelId="us.anthropic.claude-3-5-haiku-20241022-v1:0", body=json.dumps(code_req))
