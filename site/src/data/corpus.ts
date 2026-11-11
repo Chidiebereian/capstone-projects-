@@ -1,0 +1,21 @@
+// Fictional company handbook used as the RAG knowledge base.
+export const CORPUS = [
+  { id: "expense", title: "Expense & Travel Policy", text: "Meals with clients are reimbursed up to $75 per person, including tax and tip. Alcohol is not reimbursable unless approved by a director. Receipts are required for any expense over $25 and must be submitted within 30 days of purchase. Economy class is required for flights under six hours; premium economy is allowed for longer flights. Hotel bookings must be made through the corporate travel portal, with a nightly cap of $250 in most cities and $350 in high-cost cities such as New York, London and San Francisco." },
+  { id: "remote", title: "Remote Work Policy", text: "Employees may work remotely up to three days per week with manager approval. Fully remote arrangements require VP approval and are reviewed every six months. Core collaboration hours are 10:00 to 15:00 in the employee local time zone. Company laptops must connect through the corporate VPN when accessing internal systems from outside the office. A one-time home office stipend of $500 is available to new hires." },
+  { id: "security", title: "Security Incident Response", text: "If you suspect a phishing email or clicked a suspicious link, disconnect from the network and report it immediately to the security team via the #sec-incidents Slack channel. Do not delete the email; forward it as an attachment. The security team acknowledges reports within 15 minutes during business hours. Lost or stolen devices must be reported within one hour so they can be remotely wiped. Severity 1 incidents trigger the on-call incident commander and an executive notification." },
+  { id: "retention", title: "Data Retention Standard", text: "Customer application logs are retained for 90 days in hot storage and then archived to Amazon S3 Glacier for a total retention of seven years. Personally identifiable information must be deleted within 30 days of a verified customer deletion request. Backups are encrypted with AWS KMS customer managed keys and restore-tested quarterly. Analytics datasets must be pseudonymised before they leave the production account." },
+  { id: "pto", title: "Paid Time Off", text: "Full-time employees accrue 20 days of paid time off per year, plus 10 public holidays. Up to five unused days carry over into the next calendar year. Requests longer than five consecutive days need two weeks notice. Parental leave is 16 weeks fully paid for all parents. Sick leave is unlimited, but absences longer than three days require a doctor note." },
+  { id: "oncall", title: "On-Call & Incident Management", text: "Engineers join the on-call rotation after 90 days of tenure. Each rotation lasts one week, Monday to Monday, and is compensated with a $400 weekly stipend. Pages must be acknowledged within 5 minutes for Severity 1 and 30 minutes for Severity 2. Every Severity 1 incident requires a blameless post-incident review within five business days." },
+  { id: "ai", title: "Responsible AI Usage", text: "Employees may use approved generative AI tools, including the internal assistant built on Amazon Bedrock. Customer data, credentials and source code must never be pasted into public AI chatbots. AI-generated content shown to customers must be reviewed by a human before publication. All production AI features must run behind Bedrock Guardrails with PII masking enabled, and prompts are logged for 30 days for audit." },
+  { id: "procurement", title: "Procurement Policy", text: "Software purchases under $5,000 can be approved by a team manager. Purchases between $5,000 and $50,000 require finance review and a security assessment of the vendor. Anything above $50,000 requires a competitive bid from at least three vendors. All new SaaS vendors must sign the data processing agreement before receiving customer data." },
+];
+
+export const SAMPLE_QUESTIONS = [
+  "How much can I spend on a client dinner?",
+  "How many days a week can I work from home?",
+  "What should I do if I clicked a phishing link?",
+  "How long are customer logs retained?",
+  "Can I paste customer data into a public AI chatbot?",
+  "How many vacation days do I get?",
+  "What is the stock price of Amazon today?",
+];
