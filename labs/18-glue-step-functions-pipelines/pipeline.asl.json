@@ -1,0 +1,44 @@
+{
+  "Comment": "Crawl raw data, run Glue ETL, then crawl curated output. Alerts on failure.",
+  "StartAt": "CrawlRaw",
+  "States": {
+    "CrawlRaw": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+      "Parameters": { "Name": "raw-sales-crawler" },
+      "Next": "WaitForCrawler"
+    },
+    "WaitForCrawler": { "Type": "Wait", "Seconds": 60, "Next": "CrawlerStatus" },
+    "CrawlerStatus": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:getCrawler",
+      "Parameters": { "Name": "raw-sales-crawler" },
+      "Next": "CrawlerDone?"
+    },
+    "CrawlerDone?": {
+      "Type": "Choice",
+      "Choices": [{ "Variable": "$.Crawler.State", "StringEquals": "READY", "Next": "RunETL" }],
+      "Default": "WaitForCrawler"
+    },
+    "RunETL": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Parameters": { "JobName": "sales-raw-to-parquet", "Arguments": { "--run_date.$": "$$.Execution.StartTime" } },
+      "Retry": [{ "ErrorEquals": ["States.ALL"], "IntervalSeconds": 30, "MaxAttempts": 2, "BackoffRate": 2 }],
+      "Catch": [{ "ErrorEquals": ["States.ALL"], "Next": "NotifyFailure" }],
+      "Next": "CrawlCurated"
+    },
+    "CrawlCurated": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+      "Parameters": { "Name": "curated-sales-crawler" },
+      "End": true
+    },
+    "NotifyFailure": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": { "TopicArn": "${AlertsTopicArn}", "Message.$": "States.JsonToString($)" },
+      "End": true
+    }
+  }
+}
