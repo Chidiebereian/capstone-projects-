@@ -10,7 +10,8 @@ const SYN: Record<string, string[]> = {
 
 export const stem = (t: string) => (t.length > 4 && t.endsWith("s") && !t.endsWith("ss") ? t.slice(0, -1) : t);
 export const tokenize = (s: string) => (s.toLowerCase().match(/[a-z0-9$]+/g) ?? []).filter((t) => !STOP.has(t)).map(stem);
-export const expand = (q: string[]) => Array.from(new Set(q.flatMap((t) => [t, ...(SYN[t] ?? []).map(stem)])));
+export const synonyms = (t: string) => (SYN[t] ?? []).map(stem);
+export const expand = (q: string[]) => Array.from(new Set(q.flatMap((t) => [t, ...synonyms(t)])));
 
 export type Chunk = { id: string; doc: string; text: string; terms: string[] };
 export type Hit = { chunk: Chunk; score: number };
@@ -57,7 +58,8 @@ export type Answer = { sentences: { text: string; cite: number }[]; coverage: nu
 /** Extractive, citation-backed answer. Abstains when retrieved context does not cover the question. */
 export function answer(hits: Hit[], qTerms: string[], qExpanded: string[], minCoverage: number): Answer {
   const ctxTerms = new Set(hits.flatMap((h) => h.chunk.terms));
-  const covered = qTerms.filter((t) => ctxTerms.has(t) || qExpanded.some((e) => e !== t && ctxTerms.has(e)));
+  // A question term counts as covered only by itself or one of its own synonyms.
+  const covered = qTerms.filter((t) => ctxTerms.has(t) || synonyms(t).some((e) => ctxTerms.has(e)));
   const coverage = qTerms.length ? covered.length / qTerms.length : 0;
   if (!hits.length || coverage < minCoverage) return { sentences: [], coverage, abstained: true };
   const qs = new Set(qExpanded);
@@ -66,7 +68,7 @@ export function answer(hits: Hit[], qTerms: string[], qExpanded: string[], minCo
       text: s.trim(), cite: i + 1,
       score: tokenize(s).filter((t) => qs.has(t)).length + h.score * 0.05,
     })),
-  ).filter((c) => c.score >= 1 && c.text.split(" ").length > 3);
+  ).filter((c) => c.score >= 1 && c.text.split(" ").length > 3 && /^[A-Z0-9$]/.test(c.text)); // skip fragments cut at chunk boundaries
   const seen = new Set<string>();
   const picked = cands.sort((a, b) => b.score - a.score).filter((c) => (seen.has(c.text) ? false : (seen.add(c.text), true))).slice(0, 2);
   return { sentences: picked, coverage, abstained: picked.length === 0 };
