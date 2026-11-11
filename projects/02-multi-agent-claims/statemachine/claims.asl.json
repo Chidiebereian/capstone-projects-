@@ -1,0 +1,47 @@
+{
+  "Comment": "Claims backbone: agent decision, then payout or human review",
+  "StartAt": "RunAgents",
+  "States": {
+    "RunAgents": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": { "FunctionName": "${InvokeSupervisorFn}", "Payload.$": "$" },
+      "ResultSelector": { "decision.$": "$.Payload" },
+      "Retry": [{ "ErrorEquals": ["States.TaskFailed"], "IntervalSeconds": 2, "MaxAttempts": 3, "BackoffRate": 2 }],
+      "Next": "Route"
+    },
+    "Route": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.decision.outcome", "StringEquals": "APPROVED", "Next": "IssuePayout" },
+        { "Variable": "$.decision.outcome", "StringEquals": "HUMAN_REVIEW", "Next": "HumanReview" }
+      ],
+      "Default": "NotifyDenied"
+    },
+    "HumanReview": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sqs:sendMessage.waitForTaskToken",
+      "Parameters": {
+        "QueueUrl": "${AdjusterQueueUrl}",
+        "MessageBody": { "taskToken.$": "$$.Task.Token", "decision.$": "$.decision" }
+      },
+      "TimeoutSeconds": 259200,
+      "Next": "Route"
+    },
+    "IssuePayout": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "${PayoutsTable}",
+        "Item": { "claimId": { "S.$": "$$.Execution.Name" }, "amount": { "N.$": "States.Format('{}', $.decision.payout)" } }
+      },
+      "End": true
+    },
+    "NotifyDenied": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Parameters": { "TopicArn": "${ClaimsTopicArn}", "Message.$": "$.decision.reason" },
+      "End": true
+    }
+  }
+}
